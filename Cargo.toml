@@ -1,0 +1,14 @@
+[package]
+name = "asar-rust-bindings"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[build-dependencies]
+bindgen = "0.69.4"
+cmake = "0.1.50"
+git2 = "0.18.3"
