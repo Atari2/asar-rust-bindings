@@ -1,7 +1,7 @@
+use cmake::Config;
+use git2::Repository;
 use std::env;
 use std::path::PathBuf;
-use git2::Repository;
-use cmake::Config;
 
 fn make_lib_name(name: &str) -> String {
     if cfg!(target_os = "windows") {
@@ -12,20 +12,22 @@ fn make_lib_name(name: &str) -> String {
 }
 
 fn main() {
-
     // Clone the asar repository and checkout the v1.91 tag
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
-    
+
     if !out_dir.join("asar").exists() {
         let url = "https://github.com/RPGHacker/asar";
         let asar_repo = Repository::clone(url, out_dir.join("asar")).unwrap();
         let (object, reference) = asar_repo.revparse_ext("v1.91").expect("Failed to get tag");
-        asar_repo.checkout_tree(&object, None).expect("Failed to checkout tree");
+        asar_repo
+            .checkout_tree(&object, None)
+            .expect("Failed to checkout tree");
 
         match reference {
             Some(gref) => asar_repo.set_head(gref.name().unwrap()),
             None => asar_repo.set_head_detached(object.id()),
-        }.expect("Failed to set head");
+        }
+        .expect("Failed to set head");
     }
 
     let expected_lib_path = out_dir.join("lib").join(make_lib_name("asar"));
@@ -63,8 +65,7 @@ fn main() {
     println!("cargo:rustc-link-lib=static=asar-static");
 
     // Write the bindings to the $OUT_DIR/bindings.rs file.
-    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
     bindings
-        .write_to_file(out_path.join("bindings.rs"))
+        .write_to_file(out_dir.join("bindings.rs"))
         .expect("Couldn't write bindings!");
 }

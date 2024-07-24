@@ -8,8 +8,19 @@ include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 mod test;
 
 pub mod asar {
-    use crate::{asar_apiversion, asar_getalldefines, asar_getalllabels, asar_getdefine, asar_geterrors, asar_getlabelval, asar_getmapper, asar_getprints, asar_getsymbolsfile, asar_getwarnings, asar_getwrittenblocks, asar_math, asar_maxromsize, asar_patch, asar_patch_ex, asar_reset, asar_resolvedefines, asar_version, definedata, errordata, labeldata, mappertype_bigsa1rom, mappertype_exhirom, mappertype_exlorom, mappertype_hirom, mappertype_lorom, mappertype_norom, mappertype_sa1rom, mappertype_sfxrom, memoryfile, patchparams, warnsetting, writtenblockdata};
+    use std::ptr;
 
+    use crate::{
+        asar_apiversion, asar_getalldefines, asar_getalllabels, asar_getdefine, asar_geterrors,
+        asar_getlabelval, asar_getmapper, asar_getprints, asar_getsymbolsfile, asar_getwarnings,
+        asar_getwrittenblocks, asar_math, asar_maxromsize, asar_patch, asar_patch_ex, asar_reset,
+        asar_resolvedefines, asar_version, definedata, errordata, labeldata, mappertype_bigsa1rom,
+        mappertype_exhirom, mappertype_exlorom, mappertype_hirom, mappertype_lorom,
+        mappertype_norom, mappertype_sa1rom, mappertype_sfxrom, memoryfile, patchparams,
+        warnsetting, writtenblockdata,
+    };
+
+    #[derive(Debug, Clone)]
     pub struct ErrorData {
         pub fullerrdata: String,
         pub rawerrdata: String,
@@ -17,54 +28,70 @@ pub mod asar {
         pub line: i32,
         pub callerfilename: String,
         pub callerline: i32,
-        pub errid: i32
+        pub errid: i32,
     }
 
+    pub type WarningData = ErrorData;
+
+    #[derive(Debug, Clone)]
     pub struct DefineData {
         pub name: String,
-        pub contents: String
+        pub contents: String,
     }
 
+    #[derive(Debug, Clone)]
     pub struct WrittenBlockData {
         pub pcoffset: i32,
         pub snesoffset: i32,
-        pub numbytes: i32
+        pub numbytes: i32,
     }
 
+    #[derive(Debug, Clone)]
     pub struct LabelData {
         pub name: String,
-        pub location: i32
+        pub location: i32,
     }
 
+    #[derive(Debug, Clone)]
     pub struct BasicPatchOptions {
-        pub romdata: Vec<u8>,
-        pub patchloc: String
+        romdata: Vec<u8>,
+        patchloc: String,
     }
 
+    #[derive(Debug, Clone)]
     pub struct WarnSetting {
         pub warnid: String,
-        pub enabled: bool
+        pub enabled: bool,
     }
 
+    #[derive(Debug, Clone)]
+    pub enum MemoryFileData {
+        Binary(Vec<u8>),
+        Text(String),
+    }
+
+    #[derive(Debug, Clone)]
     pub struct MemoryFile {
         pub filename: String,
-        pub data: Vec<u8>
+        pub data: MemoryFileData,
     }
 
+    #[derive(Debug, Clone)]
     pub struct AdvancedPatchOptions {
-        pub patchloc: String,
-        pub romdata: Vec<u8>,
-        pub includepaths: Vec<String>,
-        pub should_reset: bool,
-        pub additional_defines: Vec<DefineData>,
-        pub stdincludesfile: String,
-        pub stddefinesfile: String,
-        pub warning_settings: Vec<WarnSetting>,
-        pub memory_files: Vec<MemoryFile>,
-        pub override_checksum_gen: bool,
-        pub generate_checksum: bool
+        patchloc: String,
+        romdata: Vec<u8>,
+        includepaths: Vec<String>,
+        should_reset: bool,
+        additional_defines: Vec<DefineData>,
+        stdincludesfile: Option<String>,
+        stddefinesfile: Option<String>,
+        warning_settings: Vec<WarnSetting>,
+        memory_files: Vec<MemoryFile>,
+        override_checksum_gen: bool,
+        generate_checksum: bool,
     }
 
+    #[derive(Debug, Clone)]
     pub enum MapperType {
         Lorom,
         Hirom,
@@ -73,28 +100,61 @@ pub mod asar {
         Sfxrom,
         Exlorom,
         Exhirom,
-        Norom
+        Norom,
     }
 
+    #[derive(Debug, Clone)]
     pub enum SymbolType {
         WLA,
-        NoCash
+        NoCash,
     }
 
+    #[derive(Debug, Clone)]
     pub enum PatchResult {
-        Success(Vec<u8>),
-        Failure(Vec<ErrorData>)
+        Success(Vec<u8>, Vec<WarningData>),
+        Failure(Vec<ErrorData>),
+    }
+
+    #[derive(Debug, Clone)]
+    pub enum PatchOption {
+        Include(String),
+        Define(String, String),
+        Warning(String, bool),
+        MemoryFile(String, MemoryFileData),
+        StdIncludesFile(String),
+        StdDefinesFile(String),
+        OverrideChecksumGen(bool),
+        GenerateChecksum(bool),
+        ShouldReset(bool),
+    }
+
+    impl MemoryFileData {
+        pub fn len(&self) -> usize {
+            match self {
+                MemoryFileData::Binary(d) => d.len(),
+                MemoryFileData::Text(d) => d.len(),
+            }
+        }
+        pub fn is_empty(&self) -> bool {
+            match self {
+                MemoryFileData::Binary(d) => d.is_empty(),
+                MemoryFileData::Text(d) => d.is_empty(),
+            }
+        }
     }
 
     impl MemoryFile {
         pub fn as_raw(&self) -> memoryfile {
             let filename = std::ffi::CString::new(self.filename.clone()).unwrap();
-            let data = self.data.as_ptr() as *mut std::os::raw::c_void;
+            let data = match &self.data {
+                MemoryFileData::Binary(d) => d.as_ptr() as *mut std::os::raw::c_void,
+                MemoryFileData::Text(d) => d.as_ptr() as *mut std::os::raw::c_void,
+            };
             let size = self.data.len();
             memoryfile {
                 path: filename.into_raw(),
                 buffer: data,
-                length: size
+                length: size,
             }
         }
     }
@@ -104,7 +164,7 @@ pub mod asar {
             let warnid = std::ffi::CString::new(self.warnid.clone()).unwrap();
             warnsetting {
                 warnid: warnid.into_raw(),
-                enabled: self.enabled
+                enabled: self.enabled,
             }
         }
     }
@@ -112,13 +172,25 @@ pub mod asar {
     impl ErrorData {
         fn from_raw(raw: &errordata) -> ErrorData {
             ErrorData {
-                fullerrdata: unsafe { std::ffi::CStr::from_ptr(raw.fullerrdata) }.to_string_lossy().into_owned(),
-                rawerrdata: unsafe { std::ffi::CStr::from_ptr(raw.rawerrdata) }.to_string_lossy().into_owned(),
-                block: unsafe { std::ffi::CStr::from_ptr(raw.block) }.to_string_lossy().into_owned(),
+                fullerrdata: unsafe { std::ffi::CStr::from_ptr(raw.fullerrdata) }
+                    .to_string_lossy()
+                    .into_owned(),
+                rawerrdata: unsafe { std::ffi::CStr::from_ptr(raw.rawerrdata) }
+                    .to_string_lossy()
+                    .into_owned(),
+                block: unsafe { std::ffi::CStr::from_ptr(raw.block) }
+                    .to_string_lossy()
+                    .into_owned(),
                 line: raw.line,
-                callerfilename: unsafe { std::ffi::CStr::from_ptr(raw.callerfilename) }.to_string_lossy().into_owned(),
+                callerfilename: if raw.callerfilename.is_null() {
+                    "".into()
+                } else {
+                    unsafe { std::ffi::CStr::from_ptr(raw.callerfilename) }
+                        .to_string_lossy()
+                        .into_owned()
+                },
                 callerline: raw.callerline,
-                errid: raw.errid
+                errid: raw.errid,
             }
         }
     }
@@ -126,8 +198,12 @@ pub mod asar {
     impl DefineData {
         fn from_raw(raw: &definedata) -> DefineData {
             DefineData {
-                name: unsafe { std::ffi::CStr::from_ptr(raw.name) }.to_string_lossy().into_owned(),
-                contents: unsafe { std::ffi::CStr::from_ptr(raw.contents) }.to_string_lossy().into_owned()
+                name: unsafe { std::ffi::CStr::from_ptr(raw.name) }
+                    .to_string_lossy()
+                    .into_owned(),
+                contents: unsafe { std::ffi::CStr::from_ptr(raw.contents) }
+                    .to_string_lossy()
+                    .into_owned(),
             }
         }
         fn as_raw(&self) -> definedata {
@@ -135,7 +211,7 @@ pub mod asar {
             let contents = std::ffi::CString::new(self.contents.clone()).unwrap();
             definedata {
                 name: name.into_raw(),
-                contents: contents.into_raw()
+                contents: contents.into_raw(),
             }
         }
     }
@@ -145,7 +221,7 @@ pub mod asar {
             WrittenBlockData {
                 pcoffset: raw.pcoffset,
                 snesoffset: raw.snesoffset,
-                numbytes: raw.numbytes
+                numbytes: raw.numbytes,
             }
         }
     }
@@ -153,8 +229,10 @@ pub mod asar {
     impl LabelData {
         fn from_raw(raw: &labeldata) -> LabelData {
             LabelData {
-                name: unsafe { std::ffi::CStr::from_ptr(raw.name) }.to_string_lossy().into_owned(),
-                location: raw.location
+                name: unsafe { std::ffi::CStr::from_ptr(raw.name) }
+                    .to_string_lossy()
+                    .into_owned(),
+                location: raw.location,
             }
         }
     }
@@ -170,8 +248,57 @@ pub mod asar {
                 mappertype_exlorom => Some(MapperType::Exlorom),
                 mappertype_exhirom => Some(MapperType::Exhirom),
                 mappertype_norom => Some(MapperType::Norom),
-                _ => None
+                _ => None,
             }
+        }
+    }
+
+    impl BasicPatchOptions {
+        pub fn new(romdata: Vec<u8>, patchloc: String) -> BasicPatchOptions {
+            BasicPatchOptions { romdata, patchloc }
+        }
+    }
+
+    impl AdvancedPatchOptions {
+        pub fn new(romdata: Vec<u8>, patchloc: String) -> AdvancedPatchOptions {
+            AdvancedPatchOptions {
+                patchloc,
+                romdata,
+                includepaths: Vec::new(),
+                should_reset: true,
+                additional_defines: Vec::new(),
+                stdincludesfile: None,
+                stddefinesfile: None,
+                warning_settings: Vec::new(),
+                memory_files: Vec::new(),
+                override_checksum_gen: false,
+                generate_checksum: false,
+            }
+        }
+
+        pub fn option(mut self, option: PatchOption) -> AdvancedPatchOptions {
+            match option {
+                PatchOption::Include(path) => self.includepaths.push(path),
+                PatchOption::Define(name, contents) => {
+                    self.additional_defines.push(DefineData { name, contents })
+                }
+                PatchOption::Warning(warnid, enabled) => {
+                    self.warning_settings.push(WarnSetting { warnid, enabled })
+                }
+                PatchOption::MemoryFile(filename, data) => {
+                    self.memory_files.push(MemoryFile { filename, data })
+                }
+                PatchOption::StdIncludesFile(filename) => self.stdincludesfile = Some(filename),
+                PatchOption::StdDefinesFile(filename) => self.stddefinesfile = Some(filename),
+                PatchOption::OverrideChecksumGen(override_checksum_gen) => {
+                    self.override_checksum_gen = override_checksum_gen
+                }
+                PatchOption::GenerateChecksum(generate_checksum) => {
+                    self.generate_checksum = generate_checksum
+                }
+                PatchOption::ShouldReset(should_reset) => self.should_reset = should_reset,
+            };
+            self
         }
     }
 
@@ -193,8 +320,12 @@ pub mod asar {
         let patchloc = std::ffi::CString::new(options.patchloc).unwrap();
         let romlen: *mut std::os::raw::c_int = &mut romsize;
         let result = unsafe { asar_patch(patchloc.as_ptr(), romdata, romsize, romlen) };
+        let mut count: std::os::raw::c_int = 0;
+        let warnings = unsafe { asar_getwarnings(&mut count) };
+        let warnings = unsafe { std::slice::from_raw_parts(warnings, count as usize) };
+        let warnings = warnings.iter().map(ErrorData::from_raw).collect();
         if result {
-            PatchResult::Success(options.romdata)
+            PatchResult::Success(options.romdata, warnings)
         } else {
             let mut count: std::os::raw::c_int = 0;
             let errors = unsafe { asar_geterrors(&mut count) };
@@ -210,14 +341,33 @@ pub mod asar {
         let patchloc = std::ffi::CString::new(options.patchloc).unwrap();
         let romlen: *mut std::os::raw::c_int = &mut romsize;
 
-        let mut definedata = options.additional_defines.iter().map(DefineData::as_raw).collect::<Vec<definedata>>();
-        let mut warning_settings = options.warning_settings.iter().map(WarnSetting::as_raw).collect::<Vec<warnsetting>>();
-        let mut memory_files = options.memory_files.iter().map(MemoryFile::as_raw).collect::<Vec<memoryfile>>();
-        let mut includepaths = options.includepaths.iter().map(|p| std::ffi::CString::new(p.clone()).unwrap().into_raw() as *const i8).collect::<Vec<_>>();
+        let mut definedata = options
+            .additional_defines
+            .iter()
+            .map(DefineData::as_raw)
+            .collect::<Vec<definedata>>();
+        let mut warning_settings = options
+            .warning_settings
+            .iter()
+            .map(WarnSetting::as_raw)
+            .collect::<Vec<warnsetting>>();
+        let mut memory_files = options
+            .memory_files
+            .iter()
+            .map(MemoryFile::as_raw)
+            .collect::<Vec<memoryfile>>();
+        let mut includepaths = options
+            .includepaths
+            .iter()
+            .map(|p| std::ffi::CString::new(p.clone()).unwrap().into_raw() as *const i8)
+            .collect::<Vec<_>>();
 
-
-        let stdincludesfile = std::ffi::CString::new(options.stdincludesfile).unwrap();
-        let stddefinesfile = std::ffi::CString::new(options.stddefinesfile).unwrap();
+        let stdincludesfile = options
+            .stdincludesfile
+            .map(|s| std::ffi::CString::new(s).unwrap());
+        let stddefinesfile = options
+            .stddefinesfile
+            .map(|s| std::ffi::CString::new(s).unwrap());
 
         let params = patchparams {
             structsize: std::mem::size_of::<patchparams>() as std::os::raw::c_int,
@@ -230,14 +380,14 @@ pub mod asar {
             should_reset: options.should_reset,
             additional_defines: definedata.as_mut_ptr(),
             additional_define_count: definedata.len() as std::os::raw::c_int,
-            stdincludesfile: stdincludesfile.as_ptr(),
-            stddefinesfile: stddefinesfile.as_ptr(),
+            stdincludesfile: stdincludesfile.map_or(ptr::null(), |s| s.as_ptr()),
+            stddefinesfile: stddefinesfile.map_or(ptr::null(), |s| s.as_ptr()),
             warning_settings: warning_settings.as_mut_ptr(),
             warning_setting_count: warning_settings.len() as std::os::raw::c_int,
             memory_files: memory_files.as_mut_ptr(),
             memory_file_count: memory_files.len() as std::os::raw::c_int,
             override_checksum_gen: options.override_checksum_gen,
-            generate_checksum: options.generate_checksum
+            generate_checksum: options.generate_checksum,
         };
         let result = unsafe { asar_patch_ex(&params) };
 
@@ -254,8 +404,16 @@ pub mod asar {
             }
         }
 
+        unsafe {
+            options.romdata.set_len(*romlen as usize);
+        }
+        let mut count: std::os::raw::c_int = 0;
+        let warnings = unsafe { asar_getwarnings(&mut count) };
+        let warnings = unsafe { std::slice::from_raw_parts(warnings, count as usize) };
+        let warnings = warnings.iter().map(ErrorData::from_raw).collect();
+
         if result {
-            PatchResult::Success(options.romdata)
+            PatchResult::Success(options.romdata, warnings)
         } else {
             let mut count: std::os::raw::c_int = 0;
             let errors = unsafe { asar_geterrors(&mut count) };
@@ -287,7 +445,14 @@ pub mod asar {
         let mut count: std::os::raw::c_int = 0;
         let prints = unsafe { asar_getprints(&mut count) };
         let prints = unsafe { std::slice::from_raw_parts(prints, count as usize) };
-        prints.iter().map(|p| unsafe { std::ffi::CStr::from_ptr(*p) }.to_string_lossy().into_owned()).collect()
+        prints
+            .iter()
+            .map(|p| {
+                unsafe { std::ffi::CStr::from_ptr(*p) }
+                    .to_string_lossy()
+                    .into_owned()
+            })
+            .collect()
     }
 
     pub fn labels() -> Vec<LabelData> {
@@ -313,7 +478,11 @@ pub mod asar {
         if def.is_null() {
             None
         } else {
-            Some(unsafe { std::ffi::CStr::from_ptr(def) }.to_string_lossy().into_owned())
+            Some(
+                unsafe { std::ffi::CStr::from_ptr(def) }
+                    .to_string_lossy()
+                    .into_owned(),
+            )
         }
     }
 
@@ -328,7 +497,9 @@ pub mod asar {
         unsafe {
             let data = std::ffi::CString::new(data).unwrap();
             let resolved = asar_resolvedefines(data.as_ptr(), learn_new);
-            std::ffi::CStr::from_ptr(resolved).to_string_lossy().into_owned()
+            std::ffi::CStr::from_ptr(resolved)
+                .to_string_lossy()
+                .into_owned()
         }
     }
 
@@ -339,7 +510,9 @@ pub mod asar {
         if err.is_null() {
             Ok(result)
         } else {
-            Err(unsafe { std::ffi::CStr::from_ptr(*err) }.to_string_lossy().into_owned())
+            Err(unsafe { std::ffi::CStr::from_ptr(*err) }
+                .to_string_lossy()
+                .into_owned())
         }
     }
 
@@ -358,13 +531,14 @@ pub mod asar {
     pub fn symbols_file(symboltype: SymbolType) -> String {
         let symboltype = match symboltype {
             SymbolType::WLA => "wla",
-            SymbolType::NoCash => "nocash"
+            SymbolType::NoCash => "nocash",
         };
         let symboltype = std::ffi::CString::new(symboltype).unwrap();
         unsafe {
             let file = asar_getsymbolsfile(symboltype.as_ptr());
-            std::ffi::CStr::from_ptr(file).to_string_lossy().into_owned()
+            std::ffi::CStr::from_ptr(file)
+                .to_string_lossy()
+                .into_owned()
         }
     }
-    
 }
