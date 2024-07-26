@@ -13,4 +13,3 @@ parking_lot = "0.12.3"
 [build-dependencies]
 bindgen = "0.69.4"
 cmake = "0.1.50"
-git2 = "0.18.3"

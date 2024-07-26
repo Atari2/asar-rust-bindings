@@ -1,0 +1,4 @@
+[submodule "src/asar"]
+	path = src/asar
+	url = https://github.com/RPGHacker/asar
+	branch = asar_19
