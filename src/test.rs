@@ -1,4 +1,6 @@
-use crate::asar::{self, AdvancedPatchOptions, MemoryFileData, PatchOption, PatchResult};
+use crate::asar::{
+    self, AdvancedPatchOptions, MemoryFileData, PatchOption, PatchResult
+};
 
 #[test]
 fn test_api_version() {
@@ -18,6 +20,12 @@ fn test_math() {
     assert!(result.is_ok());
     let result = result.unwrap();
     assert_eq!(result, 2f64);
+}
+
+#[test]
+fn test_maxromsize() {
+    let result = asar::max_rom_size();
+    assert_eq!(result, 16*1024*1024);
 }
 
 #[test]
@@ -55,4 +63,32 @@ endmacro"#
         }
         _ => panic!("Expected success"),
     }
+}
+
+#[test]
+fn test_get_labels() {
+    let romdata = vec![];
+    let patchdata = "org $008000\nlabel:";
+    let options = AdvancedPatchOptions::new(romdata, "test.asm".into()).option(
+        PatchOption::MemoryFile("test.asm".into(), MemoryFileData::Text(patchdata.into())),
+    );
+    let (result, labels) = asar::with_asar_lock(|| {
+        let result = asar::patch_ex(options);
+        let labels = asar::labels();
+        (result, labels)
+    });
+    assert!(matches!(result, PatchResult::Success(_, _)));
+    assert_eq!(labels.len(), 1);
+    assert_eq!(labels[0].name, "label");
+    assert_eq!(labels[0].location, 0x8000);
+}
+
+#[test]
+fn test_proc_macro() {
+    use asar::use_asar_global_lock;
+    #[use_asar_global_lock]
+    fn test() {
+        assert!(asar::reset());
+    }
+    test();
 }

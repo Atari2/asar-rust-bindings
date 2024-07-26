@@ -15,10 +15,14 @@ fn main() {
     // Clone the asar repository and checkout the v1.91 tag
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
 
+    let asar_version = env::var("ASAR_VERSION").unwrap_or("v1.91".to_string());
+
     if !out_dir.join("asar").exists() {
         let url = "https://github.com/RPGHacker/asar";
         let asar_repo = Repository::clone(url, out_dir.join("asar")).unwrap();
-        let (object, reference) = asar_repo.revparse_ext("v1.91").expect("Failed to get tag");
+        let (object, reference) = asar_repo
+            .revparse_ext(asar_version.as_str())
+            .expect("Failed to get tag");
         asar_repo
             .checkout_tree(&object, None)
             .expect("Failed to checkout tree");
