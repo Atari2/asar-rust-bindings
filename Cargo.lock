@@ -24,6 +24,8 @@ dependencies = [
 [[package]]
 name = "asar-rust-bindings-proc-macros"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd5773e4e6896b3a4b9fac3414d3094685a721212f669a7ace53f1578924efb3"
 dependencies = [
  "quote",
  "syn",
