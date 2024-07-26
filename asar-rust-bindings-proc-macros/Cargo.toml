@@ -2,6 +2,8 @@
 name = "asar-rust-bindings-proc-macros"
 version = "0.1.0"
 edition = "2021"
+description = "Procedural macros for asar-rust-bindings"
+license = "GPL-3.0"
 
 [lib]
 proc-macro = true
