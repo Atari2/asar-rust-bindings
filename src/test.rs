@@ -1,6 +1,4 @@
-use crate::asar::{
-    self, AdvancedPatchOptions, MemoryFileData, PatchOption, PatchResult
-};
+use crate::asar::{self, AdvancedPatchOptions, MemoryFileData, PatchOption, PatchResult};
 
 #[test]
 fn test_api_version() {
@@ -25,7 +23,7 @@ fn test_math() {
 #[test]
 fn test_maxromsize() {
     let result = asar::max_rom_size();
-    assert_eq!(result, 16*1024*1024);
+    assert_eq!(result, 16 * 1024 * 1024);
 }
 
 #[test]

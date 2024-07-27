@@ -49,7 +49,9 @@ fn main() {
         .allowlist_type("memoryfile")
         .allowlist_type("patchparams")
         .allowlist_function("asar_.*")
-        .default_enum_style(bindgen::EnumVariation::Rust { non_exhaustive: false })
+        .default_enum_style(bindgen::EnumVariation::Rust {
+            non_exhaustive: false,
+        })
         // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.

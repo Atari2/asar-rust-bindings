@@ -2,7 +2,9 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+pub(crate) mod bindings {
+    include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+}
 
 #[cfg(test)]
 mod test;
@@ -17,14 +19,14 @@ pub mod asar {
         os::raw::{c_char, c_int, c_void},
         ptr,
         sync::OnceLock,
-    }; 
+    };
 
-    use crate::{
+    use crate::bindings::{
         asar_apiversion, asar_getalldefines, asar_getalllabels, asar_getdefine, asar_geterrors,
         asar_getlabelval, asar_getmapper, asar_getprints, asar_getsymbolsfile, asar_getwarnings,
         asar_getwrittenblocks, asar_math, asar_maxromsize, asar_patch, asar_patch_ex, asar_reset,
-        asar_resolvedefines, asar_version, definedata, errordata, labeldata, memoryfile, patchparams,
-        warnsetting, writtenblockdata, mappertype
+        asar_resolvedefines, asar_version, definedata, errordata, labeldata, mappertype,
+        memoryfile, patchparams, warnsetting, writtenblockdata,
     };
 
     fn global_asar_lock() -> &'static ReentrantMutex<()> {
@@ -33,23 +35,23 @@ pub mod asar {
     }
 
     /// Executes the closure with the Asar global lock.
-    /// 
+    ///
     /// This lock is recursive, so it can be used in nested calls without issues.
-    /// 
+    ///
     /// This is necessary to ensure that Asar's API is called in a thread-safe manner.
-    /// 
+    ///
     /// It is recommended to use this function in multithreaded environments, because Asar uses a lot of global state.
-    /// 
+    ///
     /// e.g. these 2 calls would be unsafe without the lock because patch stores defines, labels in global state.
     /// ```rust
     /// use asar_rust_bindings::asar;
     /// use asar_rust_bindings::asar::with_asar_lock;
     /// use asar_rust_bindings::asar::BasicPatchOptions;
     /// // thread 1
-    /// let result = with_asar_lock(|| { 
+    /// let result = with_asar_lock(|| {
     ///     asar::patch(BasicPatchOptions::new(vec![0x00, 0x00, 0x00, 0x00], "test.asm".into()))
     /// });
-    /// 
+    ///
     /// // thread 2
     /// let (result, labels) = with_asar_lock(|| {
     ///     let result = asar::patch(BasicPatchOptions::new(vec![0x00, 0x00, 0x00, 0x00], "test2.asm".into()));
@@ -57,7 +59,7 @@ pub mod asar {
     ///     (result, labels)
     /// });
     /// ```
-    /// 
+    ///
     /// A lot of functions already use this lock internally, but if you are calling multiple functions in a row, it is recommended to call it manually since other threads might interfere between the calls.
     pub fn with_asar_lock<F, R>(f: F) -> R
     where
@@ -135,7 +137,6 @@ pub mod asar {
         pub data: MemoryFileData,
     }
 
-
     /// Represents the advanced options for a patch operation, requiring, at least, the ROM data and the patch location.
     /// Several options can be added to the patch operation, like include paths, defines, warning settings, memory files, etc.
     /// See the [`PatchOption`] enum for all the available options.
@@ -155,17 +156,7 @@ pub mod asar {
         generate_checksum: bool,
     }
 
-    #[derive(Debug, Clone)]
-    pub enum MapperType {
-        Lorom,
-        Hirom,
-        Sa1rom,
-        BigSa1rom,
-        Sfxrom,
-        Exlorom,
-        Exhirom,
-        Norom,
-    }
+    pub type MapperType = mappertype;
 
     #[derive(Debug, Clone)]
     pub enum SymbolType {
@@ -306,24 +297,7 @@ pub mod asar {
         }
     }
 
-    impl MapperType {
-        fn from_raw(raw: mappertype) -> Option<MapperType> {
-            match raw {
-                mappertype::lorom => Some(MapperType::Lorom),
-                mappertype::hirom => Some(MapperType::Hirom),
-                mappertype::sa1rom => Some(MapperType::Sa1rom),
-                mappertype::bigsa1rom => Some(MapperType::BigSa1rom),
-                mappertype::sfxrom => Some(MapperType::Sfxrom),
-                mappertype::exlorom => Some(MapperType::Exlorom),
-                mappertype::exhirom => Some(MapperType::Exhirom),
-                mappertype::norom => Some(MapperType::Norom),
-                mappertype::invalid_mapper => None,
-            }
-        }
-    }
-
     impl BasicPatchOptions {
-
         /// Creates a new BasicPatchOptions with the ROM data and the patch location.
         pub fn new(romdata: Vec<u8>, patchloc: String) -> BasicPatchOptions {
             BasicPatchOptions { romdata, patchloc }
@@ -331,7 +305,6 @@ pub mod asar {
     }
 
     impl AdvancedPatchOptions {
-
         /// Creates a new AdvancedPatchOptions with the ROM data and the patch location.
         pub fn new(romdata: Vec<u8>, patchloc: String) -> AdvancedPatchOptions {
             AdvancedPatchOptions {
@@ -387,13 +360,13 @@ pub mod asar {
     }
 
     /// Resets Asar, clearing all the errors, warnings and prints.
-    /// 
+    ///
     /// Useful to clear the state of Asar between patch operations.
-    /// 
+    ///
     /// Returns true if the reset was successful, false otherwise.
-    /// 
+    ///
     /// If false is returned, you can check the errors with the [`errors`] function.
-    /// 
+    ///
     /// remarks: This function uses the global lock.
     #[use_asar_global_lock]
     pub fn reset() -> bool {
@@ -401,9 +374,9 @@ pub mod asar {
     }
 
     /// Patches the ROM data with the patch provided in the [`BasicPatchOptions`].
-    /// 
+    ///
     /// Returns a [`PatchResult`] with the result of the patch operation.
-    /// 
+    ///
     /// remarks: This function uses the global lock.
     #[use_asar_global_lock]
     pub fn patch(mut options: BasicPatchOptions) -> PatchResult {
@@ -427,11 +400,10 @@ pub mod asar {
         }
     }
 
-
     /// Patches the ROM data with the patch provided in the [`AdvancedPatchOptions`].
-    /// 
+    ///
     /// Returns a [`PatchResult`] with the result of the patch operation.
-    /// 
+    ///
     /// remarks: This function uses the global lock.
     #[use_asar_global_lock]
     pub fn patch_ex(mut options: AdvancedPatchOptions) -> PatchResult {
@@ -519,15 +491,14 @@ pub mod asar {
     }
 
     /// Returns the maximum ROM size that Asar can handle in bytes
-    /// 
+    ///
     /// This should normally be 16*1024*1024
     pub fn max_rom_size() -> i32 {
         unsafe { asar_maxromsize() }
     }
 
-
     /// Returns the errors from the latest api call (usually [`patch`] or [`patch_ex`]).
-    /// 
+    ///
     /// remarks: This function uses the global lock.
     #[use_asar_global_lock]
     pub fn errors() -> Vec<ErrorData> {
@@ -537,9 +508,8 @@ pub mod asar {
         errors.iter().map(ErrorData::from_raw).collect()
     }
 
-
     /// Returns the warnings from the latest api call (usually [`patch`] or [`patch_ex`]).
-    /// 
+    ///
     /// remarks: This function uses the global lock.
     #[use_asar_global_lock]
     pub fn warnings() -> Vec<ErrorData> {
@@ -550,7 +520,7 @@ pub mod asar {
     }
 
     /// Returns the prints from the latest api call (usually [`patch`] or [`patch_ex`]).
-    /// 
+    ///
     /// remarks: This function uses the global lock.
     #[use_asar_global_lock]
     pub fn prints() -> Vec<String> {
@@ -564,7 +534,7 @@ pub mod asar {
     }
 
     /// Returns the labels from the latest api call (usually [`patch`] or [`patch_ex`]).
-    /// 
+    ///
     /// remarks: This function uses the global lock.
     #[use_asar_global_lock]
     pub fn labels() -> Vec<Label> {
@@ -575,9 +545,9 @@ pub mod asar {
     }
 
     /// Returns the value of a label from the latest api call (usually [`patch`] or [`patch_ex`]).
-    /// 
+    ///
     /// If the label is not found, it returns None.
-    /// 
+    ///
     /// remarks: This function uses the global lock.
     #[use_asar_global_lock]
     pub fn label_value(name: &str) -> Option<i32> {
@@ -591,7 +561,7 @@ pub mod asar {
     }
 
     /// Returns the value of a define from the latest api call (usually [`patch`] or [`patch_ex`]).
-    /// 
+    ///
     /// If the define is not found, it returns None.
     #[use_asar_global_lock]
     pub fn define(name: &str) -> Option<String> {
@@ -609,7 +579,7 @@ pub mod asar {
     }
 
     /// Returns all the defines from the latest api call (usually [`patch`] or [`patch_ex`]).
-    /// 
+    ///
     /// remarks: This function uses the global lock.
     #[use_asar_global_lock]
     pub fn defines() -> Vec<Define> {
@@ -619,11 +589,10 @@ pub mod asar {
         defines.iter().map(Define::from_raw).collect()
     }
 
-
     /// Resolves the defines in the data provided.
-    /// 
+    ///
     /// This function is not very useful and it has some issues, it is not recommended to use it.
-    /// 
+    ///
     /// remarks: This function uses the global lock.
     #[use_asar_global_lock]
     pub fn resolve_defines(data: &str) -> String {
@@ -634,9 +603,8 @@ pub mod asar {
         }
     }
 
-
     /// Computes a math expression.
-    /// 
+    ///
     /// If the math expression is invalid, it returns an error message.
     pub fn math(math: &str) -> Result<f64, String> {
         let math = CString::new(math).unwrap();
@@ -652,7 +620,7 @@ pub mod asar {
     }
 
     /// Returns the blocks written to the ROM by Asar as a consequence of a call to [`patch`] or [`patch_ex`].
-    /// 
+    ///
     /// remarks: This function uses the global lock.
     #[use_asar_global_lock]
     pub fn written_blocks() -> Vec<WrittenBlock> {
@@ -663,20 +631,23 @@ pub mod asar {
     }
 
     /// Returns the mapper type used in the latest api call (usually [`patch`] or [`patch_ex`]).
-    /// 
+    ///
     /// If the mapper type is not recognized, it returns None.
-    /// 
+    ///
     /// remarks: This function uses the global lock.
     #[use_asar_global_lock]
     pub fn mapper_type() -> Option<MapperType> {
         let raw = unsafe { asar_getmapper() };
-        MapperType::from_raw(raw)
+        match raw {
+            MapperType::invalid_mapper => None,
+            _ => Some(raw),
+        }
     }
 
     /// Returns the symbols file for the specified symbol type.
-    /// 
+    ///
     /// The symbol type can be WLA or NoCash.
-    /// 
+    ///
     /// remarks: This function uses the global lock.
     #[use_asar_global_lock]
     pub fn symbols_file(symboltype: SymbolType) -> String {
