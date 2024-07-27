@@ -23,10 +23,8 @@ pub mod asar {
         asar_apiversion, asar_getalldefines, asar_getalllabels, asar_getdefine, asar_geterrors,
         asar_getlabelval, asar_getmapper, asar_getprints, asar_getsymbolsfile, asar_getwarnings,
         asar_getwrittenblocks, asar_math, asar_maxromsize, asar_patch, asar_patch_ex, asar_reset,
-        asar_resolvedefines, asar_version, definedata, errordata, labeldata, mappertype_bigsa1rom,
-        mappertype_exhirom, mappertype_exlorom, mappertype_hirom, mappertype_lorom,
-        mappertype_norom, mappertype_sa1rom, mappertype_sfxrom, memoryfile, patchparams,
-        warnsetting, writtenblockdata,
+        asar_resolvedefines, asar_version, definedata, errordata, labeldata, memoryfile, patchparams,
+        warnsetting, writtenblockdata, mappertype
     };
 
     fn global_asar_lock() -> &'static ReentrantMutex<()> {
@@ -309,17 +307,17 @@ pub mod asar {
     }
 
     impl MapperType {
-        fn from_raw(raw: c_int) -> Option<MapperType> {
+        fn from_raw(raw: mappertype) -> Option<MapperType> {
             match raw {
-                mappertype_lorom => Some(MapperType::Lorom),
-                mappertype_hirom => Some(MapperType::Hirom),
-                mappertype_sa1rom => Some(MapperType::Sa1rom),
-                mappertype_bigsa1rom => Some(MapperType::BigSa1rom),
-                mappertype_sfxrom => Some(MapperType::Sfxrom),
-                mappertype_exlorom => Some(MapperType::Exlorom),
-                mappertype_exhirom => Some(MapperType::Exhirom),
-                mappertype_norom => Some(MapperType::Norom),
-                _ => None,
+                mappertype::lorom => Some(MapperType::Lorom),
+                mappertype::hirom => Some(MapperType::Hirom),
+                mappertype::sa1rom => Some(MapperType::Sa1rom),
+                mappertype::bigsa1rom => Some(MapperType::BigSa1rom),
+                mappertype::sfxrom => Some(MapperType::Sfxrom),
+                mappertype::exlorom => Some(MapperType::Exlorom),
+                mappertype::exhirom => Some(MapperType::Exhirom),
+                mappertype::norom => Some(MapperType::Norom),
+                mappertype::invalid_mapper => None,
             }
         }
     }

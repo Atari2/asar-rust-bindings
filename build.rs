@@ -11,7 +11,6 @@ fn make_lib_name(name: &str) -> String {
 }
 
 fn main() {
-    // Clone the asar repository and checkout the v1.91 tag
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
 
     let expected_lib_path = out_dir.join("lib").join(make_lib_name("asar"));
@@ -41,6 +40,16 @@ fn main() {
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
+        .allowlist_type("errordata")
+        .allowlist_type("labeldata")
+        .allowlist_type("definedata")
+        .allowlist_type("writtenblockdata")
+        .allowlist_type("mappertype")
+        .allowlist_type("warnsetting")
+        .allowlist_type("memoryfile")
+        .allowlist_type("patchparams")
+        .allowlist_function("asar_.*")
+        .default_enum_style(bindgen::EnumVariation::Rust { non_exhaustive: false })
         // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.
