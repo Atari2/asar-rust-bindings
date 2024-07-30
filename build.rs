@@ -11,7 +11,9 @@ fn make_lib_name(name: &str) -> String {
 }
 
 fn main() {
+    println!("cargo:rerun-if-changed=build.rs");
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+    let target = env::var("TARGET").unwrap();
 
     let expected_lib_path = out_dir.join("lib").join(make_lib_name("asar"));
 
@@ -29,6 +31,10 @@ fn main() {
     }
 
     println!("cargo:rerun-if-changed=src/asar/src/asar-dll-bindings/c/asar.h");
+
+    if target.contains("linux") {
+        println!("cargo:rustc-link-lib=dylib=stdc++");
+    }
 
     // The bindgen::Builder is the main entry point
     // to bindgen, and lets you build up options for
