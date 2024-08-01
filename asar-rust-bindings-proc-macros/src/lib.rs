@@ -26,7 +26,7 @@ pub fn use_asar_global_lock(_attr: TokenStream, item: TokenStream) -> TokenStrea
     let expanded = quote! {
         #(#doc_comments)*
         #fn_visilibility fn #fn_name(#fn_arguments) #fn_return_type {
-            crate::asar::with_asar_lock(|| {
+            crate::with_asar_lock(|| {
                 #fn_block
             })
         }
