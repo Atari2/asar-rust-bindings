@@ -13,6 +13,8 @@ use syn::parse_macro_input;
 ///    // code that uses multiple asar api calls in a multithreaded environment
 /// }
 /// ```
+/// # Note
+/// This attribute **only** does something if the `thread-safe` feature is **enabled**. Otherwise it is a no-op.
 #[proc_macro_attribute]
 pub fn use_asar_global_lock(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let input_fn = parse_macro_input!(item as syn::ItemFn);

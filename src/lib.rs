@@ -85,6 +85,9 @@ impl FakeLock {
 /// ```
 ///
 /// A lot of functions already use this lock internally, but if you are calling multiple functions in a row, it is recommended to call it manually since other threads might interfere between the calls.
+/// 
+/// # Note
+/// This function does something **only** if the `thread-safe` feature is **enabled**. Otherwise it is a no-op.
 pub fn with_asar_lock<F, R>(f: F) -> R
 where
     F: FnOnce() -> R,
