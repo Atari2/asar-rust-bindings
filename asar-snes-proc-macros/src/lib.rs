@@ -22,10 +22,11 @@ pub fn use_asar_global_lock(_attr: TokenStream, item: TokenStream) -> TokenStrea
     let fn_arguments = &input_fn.sig.inputs;
     let fn_visilibility = &input_fn.vis;
     let doc_comments = &input_fn.attrs;
+    let generics = &input_fn.sig.generics;
 
     let expanded = quote! {
         #(#doc_comments)*
-        #fn_visilibility fn #fn_name(#fn_arguments) #fn_return_type {
+        #fn_visilibility fn #fn_name #generics (#fn_arguments) #fn_return_type {
             crate::with_asar_lock(|| {
                 #fn_block
             })
