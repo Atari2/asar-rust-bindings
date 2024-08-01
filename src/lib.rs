@@ -167,6 +167,24 @@ pub enum MemoryFileData {
     Text(String),
 }
 
+impl From<Vec<u8>> for MemoryFileData {
+    fn from(data: Vec<u8>) -> Self {
+        MemoryFileData::Binary(data)
+    }
+}
+
+impl From<String> for MemoryFileData {
+    fn from(data: String) -> Self {
+        MemoryFileData::Text(data)
+    }
+}
+
+impl From<&str> for MemoryFileData {
+    fn from(data: &str) -> Self {
+        MemoryFileData::Text(data.into())
+    }
+}
+
 /// Represents the memory file for a patch operation, with the filename and the data.
 #[derive(Debug, Clone)]
 pub struct MemoryFile {
@@ -610,8 +628,8 @@ pub mod patching {
     ///
     /// remarks: This function uses the global lock.
     #[use_asar_global_lock]
-    pub fn patch_ex(rom: RomData, patch: String, options: AdvancedPatchOptions) -> PatchResult {
-        let (romdata, result) = patch_ex_basic(rom, patch, options);
+    pub fn patch_ex<T: Into<String>>(rom: RomData, patch: T, options: AdvancedPatchOptions) -> PatchResult {
+        let (romdata, result) = patch_ex_basic(rom, patch.into(), options);
 
         let mut count: c_int = 0;
         let warnings = unsafe { asar_getwarnings(&mut count) };
@@ -878,10 +896,10 @@ impl Patcher {
     ///
     /// remarks: This function uses the global lock.
     #[cfg(feature = "thread-safe")]
-    pub fn apply<'a>(
+    pub fn apply<'a, T: Into<String>>(
         self,
         rom: RomData,
-        patch: String,
+        patch: T,
     ) -> Result<ApplyResult<'a>, ConcurrentApplyError> {
         if APPLYRESULT_ONCE_ALIVE
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
@@ -892,7 +910,7 @@ impl Patcher {
 
         let guard = global_asar_lock().lock();
         let (romdata, result) =
-            patching::patch_ex_basic(rom, patch, self.options.unwrap_or_default());
+            patching::patch_ex_basic(rom, patch.into(), self.options.unwrap_or_default());
 
         Ok(ApplyResult {
             romdata,
@@ -907,10 +925,10 @@ impl Patcher {
     ///
     /// See [`ConcurrentApplyError`] for more information.
     #[cfg(not(feature = "thread-safe"))]
-    pub fn apply<'a>(
+    pub fn apply<'a, T: Into<String>>(
         self,
         rom: RomData,
-        patch: String,
+        patch: T,
     ) -> Result<ApplyResult<'a>, ConcurrentApplyError> {
         if APPLYRESULT_ONCE_ALIVE
             .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
@@ -920,7 +938,7 @@ impl Patcher {
         }
 
         let (romdata, result) =
-            patching::patch_ex_basic(rom, patch, self.options.unwrap_or_default());
+            patching::patch_ex_basic(rom, patch.into(), self.options.unwrap_or_default());
 
         Ok(ApplyResult {
             romdata,

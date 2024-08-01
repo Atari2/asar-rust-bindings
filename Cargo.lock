@@ -13,7 +13,7 @@ dependencies = [
 
 [[package]]
 name = "asar-snes"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "asar-snes-proc-macros",
  "bindgen",
@@ -23,9 +23,9 @@ dependencies = [
 
 [[package]]
 name = "asar-snes-proc-macros"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a52e35a59f69b1f95753c743c2fa011ce9a518c7c60f05947d1e3fec6e42ed7e"
+checksum = "b1c74800e4b59168aca27828fe7e34d0f382a3cc9384462d3481cbf7cabbeedb"
 dependencies = [
  "quote",
  "syn",

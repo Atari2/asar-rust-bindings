@@ -1,4 +1,4 @@
-use crate::{AdvancedPatchOptions, MemoryFileData, PatchOption, PatchResult};
+use crate::{AdvancedPatchOptions, PatchOption, PatchResult};
 
 use crate as asar;
 
@@ -37,25 +37,23 @@ fn test_patch() {
     let patchdata = r#"incsrc "include.asm"
 org $008000
 lda !test
-%testmacro()"#
-        .into();
+%testmacro()"#;
     let includedata = r#"macro testmacro()
     sta $19
-endmacro"#
-        .into();
+endmacro"#;
     let options = AdvancedPatchOptions::new()
         .option(PatchOption::Include("includefiles".into()))
         .option(PatchOption::Define("test".into(), "$18".into()))
         .option(PatchOption::Warning("Wrelative_path_used".into(), false))
         .option(PatchOption::MemoryFile(
             "test.asm".into(),
-            MemoryFileData::Text(patchdata),
+            patchdata.into(),
         ))
         .option(PatchOption::MemoryFile(
             "includefiles/include.asm".into(),
-            MemoryFileData::Text(includedata),
+            includedata.into(),
         ));
-    let result = asar::patching::patch_ex(romdata, "test.asm".into(), options);
+    let result = asar::patching::patch_ex(romdata, "test.asm", options);
     assert!(matches!(result, PatchResult::Success(_, _)));
     let expected: [u8; 4] = [0xA5, 0x18, 0x85, 0x19];
     match result {
@@ -75,10 +73,10 @@ fn test_get_labels() {
     let patchdata = "org $008000\nlabel:";
     let options = AdvancedPatchOptions::new().option(PatchOption::MemoryFile(
         "test.asm".into(),
-        MemoryFileData::Text(patchdata.into()),
+        patchdata.into(),
     ));
     let (result, labels) = asar::with_asar_lock(|| {
-        let result = asar::patching::patch_ex(romdata, "test.asm".into(), options);
+        let result = asar::patching::patch_ex(romdata, "test.asm", options);
         let labels = asar::patching::labels();
         (result, labels)
     });
@@ -119,19 +117,19 @@ org $0D8000
 "#;
     patcher.option(PatchOption::MemoryFile(
         "test.asm".into(),
-        MemoryFileData::Text(patchdata.into()),
+        patchdata.into(),
     ));
     let patcher2 = patcher.clone();
     let patcher3 = patcher.clone();
 
     // first application should succeed
-    let result = patcher.apply(romdata.clone(), "test.asm".into());
+    let result = patcher.apply(romdata.clone(), "test.asm");
     assert!(result.is_ok());
     let result = result.unwrap();
     assert!(result.success());
 
     // if we try to apply while the first application is still not marked as done, it should fail
-    let result2 = patcher2.apply(romdata, "test.asm".into());
+    let result2 = patcher2.apply(romdata, "test.asm");
     assert!(result2.is_err());
 
     let labels = result.labels();
@@ -151,6 +149,6 @@ org $0D8000
     assert_eq!(romdata.length, pcaddress + 1);
 
     // after consuming the result, we should be able to apply again
-    let result3 = patcher3.apply(romdata, "test2.asm".into());
+    let result3 = patcher3.apply(romdata, "test2.asm");
     assert!(result3.is_ok());
 }
