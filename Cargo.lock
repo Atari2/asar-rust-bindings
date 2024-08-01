@@ -24,6 +24,8 @@ dependencies = [
 [[package]]
 name = "asar-snes-proc-macros"
 version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a52e35a59f69b1f95753c743c2fa011ce9a518c7c60f05947d1e3fec6e42ed7e"
 dependencies = [
  "quote",
  "syn",
