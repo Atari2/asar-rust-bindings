@@ -1,8 +1,8 @@
 [package]
-name = "asar-rust-bindings-proc-macros"
+name = "asar-snes-proc-macros"
 version = "0.1.1"
 edition = "2021"
-description = "Procedural macros for asar-rust-bindings"
+description = "Procedural macros for asar-snes"
 license = "GPL-3.0"
 
 [lib]
