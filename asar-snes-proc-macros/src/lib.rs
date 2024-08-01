@@ -5,8 +5,8 @@ use syn::parse_macro_input;
 /// This macro is used to ensure that the global lock is used in the function.
 /// 
 /// Usage 
-/// ```rust
-/// use asar::use_asar_global_lock;
+/// ```ignore
+/// use asar_snes::use_asar_global_lock;
 /// 
 /// #[use_asar_global_lock]
 /// fn my_function() {

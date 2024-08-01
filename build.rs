@@ -15,8 +15,7 @@ fn main() {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let target = env::var("TARGET").unwrap();
 
-    let expected_lib_path = out_dir.join("lib").join(make_lib_name("asar"));
-
+    let expected_lib_path = out_dir.join("lib").join(make_lib_name("asar-static"));
     // build asar with cmake
     if !expected_lib_path.exists() {
         let _dst = Config::new("src/asar/src")

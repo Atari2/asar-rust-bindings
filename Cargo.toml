@@ -1,5 +1,5 @@
 [package]
-name = "asar-rust-bindings"
+name = "asar-snes"
 version = "0.1.4"
 edition = "2021"
 license = "GPL-3.0"
@@ -8,9 +8,12 @@ description = "Rust bindings for Asar (https://github.com/RPGHacker/asar)"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-asar-rust-bindings-proc-macros = "0.1.0"
-parking_lot = "0.12.3"
+asar-snes-proc-macros = "0.1.2"
+parking_lot = { version = "0.12.3", optional = true }
 
 [build-dependencies]
 bindgen = "0.69.4"
 cmake = "0.1.50"
+
+[features]
+thread-safe = ["dep:parking_lot"]

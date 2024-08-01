@@ -3,8 +3,8 @@
 version = 3
 
 [[package]]
-name = "asar-rust-bindings-proc-macros"
-version = "0.1.0"
+name = "asar-snes-proc-macros"
+version = "0.1.2"
 dependencies = [
  "quote",
  "syn",
